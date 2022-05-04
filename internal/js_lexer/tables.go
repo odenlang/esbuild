@@ -52,6 +52,7 @@ var tokenToString = map[T]string{
 	TOpenParen:                         "\"(\"",
 	TPercent:                           "\"%\"",
 	TPlus:                              "\"+\"",
+	TPipe:                              "\"|>\"",
 	TPlusPlus:                          "\"++\"",
 	TQuestion:                          "\"?\"",
 	TQuestionDot:                       "\"?.\"",

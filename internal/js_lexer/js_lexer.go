@@ -84,6 +84,7 @@ const (
 	TOpenParen
 	TPercent
 	TPlus
+	TPipe
 	TPlusPlus
 	TQuestion
 	TQuestionDot
@@ -1370,6 +1371,9 @@ func (lexer *Lexer) Next() {
 				default:
 					lexer.Token = TBarBar
 				}
+			case '>':
+				lexer.step()
+				lexer.Token = TPipe
 			default:
 				lexer.Token = TBar
 			}

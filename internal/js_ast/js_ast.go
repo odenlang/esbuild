@@ -123,6 +123,7 @@ const (
 
 	// Left-associative
 	BinOpAdd
+	BinOpPipe
 	BinOpSub
 	BinOpMul
 	BinOpDiv
@@ -196,6 +197,7 @@ var OpTable = []opTableEntry{
 
 	// Left-associative
 	{"+", LAdd, false},
+	{"|>", LAssign, false},
 	{"-", LAdd, false},
 	{"*", LMultiply, false},
 	{"/", LMultiply, false},

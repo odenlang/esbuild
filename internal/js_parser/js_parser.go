@@ -3839,6 +3839,13 @@ func (p *parser) parseSuffix(left js_ast.Expr, level js_ast.L, errors *deferredE
 			p.lexer.Next()
 			left = js_ast.Expr{Loc: left.Loc, Data: &js_ast.EBinary{Op: js_ast.BinOpAdd, Left: left, Right: p.parseExpr(js_ast.LAdd)}}
 
+		case js_lexer.TPipe:
+			if level >= js_ast.LAssign {
+				return left
+			}
+			p.lexer.Next()
+			left = js_ast.Expr{Loc: left.Loc, Data: &js_ast.EBinary{Op: js_ast.BinOpPipe, Left: left, Right: p.parseExpr(js_ast.LAssign)}}
+
 		case js_lexer.TPlusEquals:
 			if level >= js_ast.LAssign {
 				return left
@@ -11985,6 +11992,12 @@ func (p *parser) visitExprInOut(expr js_ast.Expr, in exprIn) (js_ast.Expr, exprO
 					e.Left = left
 					e.Right = right
 				}
+			}
+
+		case js_ast.BinOpPipe:
+			if right, ok := e.Right.Data.(*js_ast.ECall); ok {
+				right.Args = append([]js_ast.Expr{e.Left}, right.Args...)
+				return e.Right, exprOut{}
 			}
 
 		case js_ast.BinOpAdd:
