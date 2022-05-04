@@ -1,8 +1,8 @@
 {
-  "name": "esbuild-netbsd-64",
+  "name": "@odenlang/esbuild-netbsd-64",
   "version": "0.14.38",
   "description": "The NetBSD AMD64 binary for esbuild, a JavaScript bundler.",
-  "repository": "https://github.com/evanw/esbuild",
+  "repository": "https://github.com/odenlang/esbuild",
   "license": "MIT",
   "engines": {
     "node": ">=12"

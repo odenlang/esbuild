@@ -414,76 +414,76 @@ publish-all: check-go-version
 	@echo Enter one-time password:
 	@read OTP && OTP="$$OTP" $(MAKE) --no-print-directory -j4 \
 		publish-neutral \
-		publish-deno \
+		# publish-deno \
 		publish-wasm
 
 	git push origin master "v$(ESBUILD_VERSION)"
 
 publish-windows: platform-windows
-	test -n "$(OTP)" && cd npm/esbuild-windows-64 && npm publish --otp="$(OTP)"
+	cd npm/esbuild-windows-64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-windows-32: platform-windows-32
-	test -n "$(OTP)" && cd npm/esbuild-windows-32 && npm publish --otp="$(OTP)"
+	cd npm/esbuild-windows-32 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-windows-arm64: platform-windows-arm64
-	test -n "$(OTP)" && cd npm/esbuild-windows-arm64 && npm publish --otp="$(OTP)"
+	cd npm/esbuild-windows-arm64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-android: platform-android
-	test -n "$(OTP)" && cd npm/esbuild-android-64 && npm publish --otp="$(OTP)"
+	cd npm/esbuild-android-64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-android-arm64: platform-android-arm64
-	test -n "$(OTP)" && cd npm/esbuild-android-arm64 && npm publish --otp="$(OTP)"
+	cd npm/esbuild-android-arm64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-darwin: platform-darwin
-	test -n "$(OTP)" && cd npm/esbuild-darwin-64 && npm publish --otp="$(OTP)"
+	cd npm/esbuild-darwin-64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-darwin-arm64: platform-darwin-arm64
-	test -n "$(OTP)" && cd npm/esbuild-darwin-arm64 && npm publish --otp="$(OTP)"
+	cd npm/esbuild-darwin-arm64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-freebsd: platform-freebsd
-	test -n "$(OTP)" && cd npm/esbuild-freebsd-64 && npm publish --otp="$(OTP)"
+	cd npm/esbuild-freebsd-64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-freebsd-arm64: platform-freebsd-arm64
-	test -n "$(OTP)" && cd npm/esbuild-freebsd-arm64 && npm publish --otp="$(OTP)"
+	cd npm/esbuild-freebsd-arm64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-netbsd: platform-netbsd
-	test -n "$(OTP)" && cd npm/esbuild-netbsd-64 && npm publish --otp="$(OTP)"
+	cd npm/esbuild-netbsd-64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-openbsd: platform-openbsd
-	test -n "$(OTP)" && cd npm/esbuild-openbsd-64 && npm publish --otp="$(OTP)"
+	cd npm/esbuild-openbsd-64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-linux: platform-linux
-	test -n "$(OTP)" && cd npm/esbuild-linux-64 && npm publish --otp="$(OTP)"
+	cd npm/esbuild-linux-64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-linux-32: platform-linux-32
-	test -n "$(OTP)" && cd npm/esbuild-linux-32 && npm publish --otp="$(OTP)"
+	cd npm/esbuild-linux-32 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-linux-arm: platform-linux-arm
-	test -n "$(OTP)" && cd npm/esbuild-linux-arm && npm publish --otp="$(OTP)"
+	cd npm/esbuild-linux-arm && npm publish --registry=https://npm.pkg.github.com/
 
 publish-linux-arm64: platform-linux-arm64
-	test -n "$(OTP)" && cd npm/esbuild-linux-arm64 && npm publish --otp="$(OTP)"
+	cd npm/esbuild-linux-arm64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-linux-mips64le: platform-linux-mips64le
-	test -n "$(OTP)" && cd npm/esbuild-linux-mips64le && npm publish --otp="$(OTP)"
+	cd npm/esbuild-linux-mips64le && npm publish --registry=https://npm.pkg.github.com/
 
 publish-linux-ppc64le: platform-linux-ppc64le
-	test -n "$(OTP)" && cd npm/esbuild-linux-ppc64le && npm publish --otp="$(OTP)"
+	cd npm/esbuild-linux-ppc64le && npm publish --registry=https://npm.pkg.github.com/
 
 publish-linux-riscv64: platform-linux-riscv64
-	test -n "$(OTP)" && cd npm/esbuild-linux-riscv64 && npm publish --otp="$(OTP)"
+	cd npm/esbuild-linux-riscv64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-linux-s390x: platform-linux-s390x
-	test -n "$(OTP)" && cd npm/esbuild-linux-s390x && npm publish --otp="$(OTP)"
+	cd npm/esbuild-linux-s390x && npm publish --registry=https://npm.pkg.github.com/
 
 publish-sunos: platform-sunos
-	test -n "$(OTP)" && cd npm/esbuild-sunos-64 && npm publish --otp="$(OTP)"
+	cd npm/esbuild-sunos-64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-wasm: platform-wasm
-	test -n "$(OTP)" && cd npm/esbuild-wasm && npm publish --otp="$(OTP)"
+	cd npm/esbuild-wasm && npm publish --registry=https://npm.pkg.github.com/
 
 publish-neutral: platform-neutral
-	test -n "$(OTP)" && cd npm/esbuild && npm publish --otp="$(OTP)"
+	cd npm/esbuild && npm publish --registry=https://npm.pkg.github.com/
 
 publish-deno:
 	test -d deno/.git || (rm -fr deno && git clone git@github.com:esbuild/deno-esbuild.git deno)
