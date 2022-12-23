@@ -78,6 +78,7 @@ async function tests() {
   await testServe()
   await testBuild()
   await testWatch()
+  await testWatchAndIncremental()
 }
 
 // Called when this is the child process to run the tests.
@@ -97,7 +98,7 @@ function startChildProcess() {
   const timeout = setTimeout(() => {
     console.error('❌ node unref test timeout - child_process.unref() broken?')
     process.exit(1);
-  }, 30 * 1000);
+  }, 5 * 60 * 1000);
 
   child.on('error', (error) => {
     console.error('❌', error);

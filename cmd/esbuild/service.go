@@ -43,7 +43,7 @@ type serviceType struct {
 	callbacks          map[uint32]responseCallback
 	activeBuilds       map[int]*activeBuild
 	outgoingPackets    chan outgoingPacket
-	keepAliveWaitGroup sync.WaitGroup
+	keepAliveWaitGroup *helpers.ThreadSafeWaitGroup
 	mutex              sync.Mutex
 	nextRequestID      uint32
 }
@@ -55,18 +55,18 @@ func (service *serviceType) getActiveBuild(key int) *activeBuild {
 	return activeBuild
 }
 
-func (service *serviceType) trackActiveBuild(key int, activeBuild *activeBuild) {
-	if activeBuild.refCount > 0 {
-		service.mutex.Lock()
-		defer service.mutex.Unlock()
-		if service.activeBuilds[key] != nil {
-			panic("Internal error")
-		}
-		service.activeBuilds[key] = activeBuild
-
-		// This pairs with "Done()" in "decRefCount"
-		service.keepAliveWaitGroup.Add(1)
+func (service *serviceType) trackActiveBuild(key int) *activeBuild {
+	service.mutex.Lock()
+	defer service.mutex.Unlock()
+	if service.activeBuilds[key] != nil {
+		panic("Internal error")
 	}
+	activeBuild := &activeBuild{refCount: 1}
+	service.activeBuilds[key] = activeBuild
+
+	// This pairs with "Done()" in "decRefCount"
+	service.keepAliveWaitGroup.Add(1)
+	return activeBuild
 }
 
 func (service *serviceType) decRefCount(key int, activeBuild *activeBuild) {
@@ -97,9 +97,10 @@ func runService(sendPings bool) {
 	logger.API = logger.JSAPI
 
 	service := serviceType{
-		callbacks:       make(map[uint32]responseCallback),
-		activeBuilds:    make(map[int]*activeBuild),
-		outgoingPackets: make(chan outgoingPacket),
+		callbacks:          make(map[uint32]responseCallback),
+		activeBuilds:       make(map[int]*activeBuild),
+		outgoingPackets:    make(chan outgoingPacket),
+		keepAliveWaitGroup: helpers.MakeThreadSafeWaitGroup(),
 	}
 	buffer := make([]byte, 16*1024)
 	stream := []byte{}
@@ -107,10 +108,7 @@ func runService(sendPings bool) {
 	// Write packets on a single goroutine so they aren't interleaved
 	go func() {
 		for {
-			packet, ok := <-service.outgoingPackets
-			if !ok {
-				break // No more packets
-			}
+			packet := <-service.outgoingPackets
 			if _, err := os.Stdout.Write(packet.bytes); err != nil {
 				os.Exit(1) // I/O error
 			}
@@ -120,6 +118,14 @@ func runService(sendPings bool) {
 
 	// The protocol always starts with the version
 	os.Stdout.Write(append(writeUint32(nil, uint32(len(esbuildVersion))), esbuildVersion...))
+
+	// Wait for the last response to be written to stdout before returning from
+	// the enclosing function, which will return from "main()" and exit.
+	service.keepAliveWaitGroup.Add(1)
+	defer func() {
+		service.keepAliveWaitGroup.Done()
+		service.keepAliveWaitGroup.Wait()
+	}()
 
 	// Periodically ping the host even when we're idle. This will catch cases
 	// where the host has disappeared and will never send us anything else but
@@ -172,11 +178,11 @@ func runService(sendPings bool) {
 		// Move the remaining partial packet to the end to avoid reallocating
 		stream = append(stream[:0], bytes...)
 	}
-
-	// Wait for the last response to be written to stdout
-	service.keepAliveWaitGroup.Wait()
 }
 
+// This will either block until the request has been sent and a response has
+// been received, or it will return nil to indicate failure to send due to
+// stdin being closed.
 func (service *serviceType) sendRequest(request interface{}) interface{} {
 	result := make(chan interface{})
 	var id uint32
@@ -192,6 +198,7 @@ func (service *serviceType) sendRequest(request interface{}) interface{} {
 		service.callbacks[id] = callback
 		return id
 	}()
+
 	service.keepAliveWaitGroup.Add(1) // The writer thread will call "Done()"
 	service.outgoingPackets <- outgoingPacket{
 		bytes: encodePacket(packet{
@@ -435,18 +442,17 @@ func (service *serviceType) handleBuildRequest(id uint32, request map[string]int
 	}
 
 	// Optionally allow input from the stdin channel
-	if stdin, ok := request["stdinContents"].(string); ok {
+	if stdin, ok := request["stdinContents"].([]byte); ok {
 		if options.Stdin == nil {
 			options.Stdin = &api.StdinOptions{}
 		}
-		options.Stdin.Contents = stdin
+		options.Stdin.Contents = string(stdin)
 		if resolveDir, ok := request["stdinResolveDir"].(string); ok {
 			options.Stdin.ResolveDir = resolveDir
 		}
 	}
 
-	activeBuild := &activeBuild{refCount: 1}
-	service.trackActiveBuild(key, activeBuild)
+	activeBuild := service.trackActiveBuild(key)
 	defer service.decRefCount(key, activeBuild)
 
 	if plugins, ok := request["plugins"]; ok {
@@ -569,7 +575,7 @@ func (service *serviceType) handleServeRequest(id uint32, options api.BuildOptio
 	activeBuild.refCount++ // Make sure the serve doesn't finish until "Wait" finishes
 	activeBuild.serveStop = result.Stop
 
-	// Asynchronously wait for the server to stop, then fulfil the "wait" promise
+	// Asynchronously wait for the server to stop, then fulfill the "wait" promise
 	go func() {
 		request := map[string]interface{}{
 			"command": "serve-wait",
@@ -642,7 +648,7 @@ func stringToResolveKind(kind string) (api.ResolveKind, bool) {
 		return api.ResolveCSSURLToken, true
 	}
 
-	return api.ResolveEntryPoint, false
+	return api.ResolveNone, false
 }
 
 func (service *serviceType) convertPlugins(key int, jsPlugins interface{}, activeBuild *activeBuild) ([]api.Plugin, error) {
@@ -749,10 +755,13 @@ func (service *serviceType) convertPlugins(key int, jsPlugins interface{}, activ
 			build.OnStart(func() (api.OnStartResult, error) {
 				result := api.OnStartResult{}
 
-				response := service.sendRequest(map[string]interface{}{
+				response, ok := service.sendRequest(map[string]interface{}{
 					"command": "on-start",
 					"key":     key,
 				}).(map[string]interface{})
+				if !ok {
+					return result, errors.New("The service was stopped")
+				}
 
 				if value, ok := response["errors"]; ok {
 					result.Errors = decodeMessages(value.([]interface{}))
@@ -778,7 +787,7 @@ func (service *serviceType) convertPlugins(key int, jsPlugins interface{}, activ
 					return result, nil
 				}
 
-				response := service.sendRequest(map[string]interface{}{
+				response, ok := service.sendRequest(map[string]interface{}{
 					"command":    "on-resolve",
 					"key":        key,
 					"ids":        ids,
@@ -789,6 +798,9 @@ func (service *serviceType) convertPlugins(key int, jsPlugins interface{}, activ
 					"kind":       resolveKindToString(args.Kind),
 					"pluginData": args.PluginData,
 				}).(map[string]interface{})
+				if !ok {
+					return result, errors.New("The service was stopped")
+				}
 
 				if value, ok := response["id"]; ok {
 					id := value.(int)
@@ -857,7 +869,7 @@ func (service *serviceType) convertPlugins(key int, jsPlugins interface{}, activ
 					return result, nil
 				}
 
-				response := service.sendRequest(map[string]interface{}{
+				response, ok := service.sendRequest(map[string]interface{}{
 					"command":    "on-load",
 					"key":        key,
 					"ids":        ids,
@@ -866,6 +878,9 @@ func (service *serviceType) convertPlugins(key int, jsPlugins interface{}, activ
 					"suffix":     args.Suffix,
 					"pluginData": args.PluginData,
 				}).(map[string]interface{})
+				if !ok {
+					return result, errors.New("The service was stopped")
+				}
 
 				if value, ok := response["id"]; ok {
 					id := value.(int)
@@ -920,7 +935,7 @@ func (service *serviceType) convertPlugins(key int, jsPlugins interface{}, activ
 
 func (service *serviceType) handleTransformRequest(id uint32, request map[string]interface{}) []byte {
 	inputFS := request["inputFS"].(bool)
-	input := request["input"].(string)
+	input := string(request["input"].([]byte))
 	flags := decodeStringArray(request["flags"].([]interface{}))
 
 	options, err := cli.ParseTransformOptions(flags)
@@ -976,6 +991,10 @@ func (service *serviceType) handleTransformRequest(id uint32, request map[string
 
 		"mapFS": mapFS,
 		"map":   string(result.Map),
+	}
+
+	if result.LegalComments != nil {
+		response["legalComments"] = string(result.LegalComments)
 	}
 
 	if result.MangleCache != nil {
@@ -1081,6 +1100,7 @@ func encodeMessages(msgs []api.Message) []interface{} {
 	values := make([]interface{}, len(msgs))
 	for i, msg := range msgs {
 		value := map[string]interface{}{
+			"id":         msg.ID,
 			"pluginName": msg.PluginName,
 			"text":       msg.Text,
 			"location":   encodeLocation(msg.Location),
@@ -1131,6 +1151,7 @@ func decodeMessages(values []interface{}) []api.Message {
 	for i, value := range values {
 		obj := value.(map[string]interface{})
 		msg := api.Message{
+			ID:         obj["id"].(string),
 			PluginName: obj["pluginName"].(string),
 			Text:       obj["text"].(string),
 			Location:   decodeLocation(obj["location"]),
@@ -1170,6 +1191,7 @@ func decodeLocationToPrivate(value interface{}) *logger.MsgLocation {
 
 func decodeMessageToPrivate(obj map[string]interface{}) logger.Msg {
 	msg := logger.Msg{
+		ID:         logger.StringToMaximumMsgID(obj["id"].(string)),
 		PluginName: obj["pluginName"].(string),
 		Data: logger.MsgData{
 			Text:       obj["text"].(string),

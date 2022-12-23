@@ -52,6 +52,7 @@ let initializeWasCalled = false
 export const initialize: typeof types.initialize = async (options) => {
   options = common.validateInitializeOptions(options || {})
   if (options.wasmURL) throw new Error(`The "wasmURL" option only works in the browser`)
+  if (options.wasmModule) throw new Error(`The "wasmModule" option only works in the browser`)
   if (options.worker) throw new Error(`The "worker" option only works in the browser`)
   if (initializeWasCalled) throw new Error('Cannot call "initialize" more than once')
   await ensureServiceIsRunning()
@@ -66,7 +67,8 @@ async function installFromNPM(name: string, subpath: string): Promise<string> {
   } catch (e) {
   }
 
-  const url = `https://registry.npmjs.org/${name}/-/${name}-${version}.tgz`
+  const npmRegistry = Deno.env.get("NPM_CONFIG_REGISTRY") || "https://registry.npmjs.org";
+  const url = `${npmRegistry}/${name}/-/${name.replace("@esbuild/", "")}-${version}.tgz`;
   const buffer = await fetch(url).then(r => r.arrayBuffer())
   const executable = extractFileFromTarGzip(new Uint8Array(buffer), subpath)
 
@@ -111,7 +113,7 @@ function getCachePath(name: string): { finalPath: string, finalDir: string } {
 
   if (!baseDir) throw new Error('Failed to find cache directory')
   const finalDir = baseDir + `/esbuild/bin`
-  const finalPath = finalDir + `/${name}@${version}`
+  const finalPath = finalDir + `/${name.replace('/', '-')}@${version}`
   return { finalPath, finalDir }
 }
 
@@ -142,13 +144,17 @@ async function install(): Promise<string> {
 
   const platformKey = Deno.build.target
   const knownWindowsPackages: Record<string, string> = {
-    'x86_64-pc-windows-msvc': 'esbuild-windows-64',
+    'x86_64-pc-windows-msvc': '@esbuild/win32-x64',
   }
   const knownUnixlikePackages: Record<string, string> = {
-    'aarch64-apple-darwin': 'esbuild-darwin-arm64',
-    'aarch64-unknown-linux-gnu': 'esbuild-linux-arm64',
-    'x86_64-apple-darwin': 'esbuild-darwin-64',
-    'x86_64-unknown-linux-gnu': 'esbuild-linux-64',
+    // These are the only platforms that Deno supports
+    'aarch64-apple-darwin': '@esbuild/darwin-arm64',
+    'aarch64-unknown-linux-gnu': '@esbuild/linux-arm64',
+    'x86_64-apple-darwin': '@esbuild/darwin-x64',
+    'x86_64-unknown-linux-gnu': '@esbuild/linux-x64',
+
+    // These platforms are not supported by Deno
+    'x86_64-unknown-freebsd': '@esbuild/freebsd-x64',
   }
 
   // Pick a package to install
@@ -218,7 +224,7 @@ let ensureServiceIsRunning = (): Promise<Service> => {
           startWriteFromQueueWorker()
         },
         isSync: false,
-        isBrowser: false,
+        isWriteUnavailable: false,
         esbuild: ourselves,
       })
 
@@ -293,7 +299,7 @@ let ensureServiceIsRunning = (): Promise<Service> => {
                 },
                 writeFile(contents, callback) {
                   Deno.makeTempFile().then(
-                    tempFile => Deno.writeFile(tempFile, new TextEncoder().encode(contents)).then(
+                    tempFile => Deno.writeFile(tempFile, typeof contents === 'string' ? new TextEncoder().encode(contents) : contents).then(
                       () => callback(tempFile),
                       () => callback(null)),
                     () => callback(null))

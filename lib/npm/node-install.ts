@@ -197,7 +197,7 @@ function maybeOptimizePackage(binPath: string): void {
 async function downloadDirectlyFromNPM(pkg: string, subpath: string, binPath: string): Promise<void> {
   // If that fails, the user could have npm configured incorrectly or could not
   // have npm installed. Try downloading directly from npm as a last resort.
-  const url = `https://registry.npmjs.org/${pkg}/-/${pkg}-${ESBUILD_VERSION}.tgz`;
+  const url = `https://registry.npmjs.org/${pkg}/-/${pkg.replace('@esbuild/', '')}-${ESBUILD_VERSION}.tgz`;
   console.error(`[esbuild] Trying to download ${JSON.stringify(url)}`);
   try {
     fs.writeFileSync(binPath, extractFileFromTarGzip(await fetch(url), subpath));
@@ -266,7 +266,7 @@ this. If that fails, you need to remove the "--no-optional" flag to use esbuild.
 checkAndPreparePackage().then(() => {
   if (isToPathJS) {
     // We need "node" before this command since it's a JavaScript file
-    validateBinaryVersion('node', toPath);
+    validateBinaryVersion(process.execPath, toPath);
   } else {
     // This is no longer a JavaScript file so don't run it using "node"
     validateBinaryVersion(toPath);

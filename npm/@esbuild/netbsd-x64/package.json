@@ -1,0 +1,16 @@
+{
+  "name": "@odenlang/netbsd-x64",
+  "version": "0.16.10",
+  "description": "The NetBSD AMD64 binary for esbuild, a JavaScript bundler.",
+  "repository": "https://github.com/odenlang/esbuild",
+  "license": "MIT",
+  "engines": {
+    "node": ">=12"
+  },
+  "os": [
+    "netbsd"
+  ],
+  "cpu": [
+    "x64"
+  ]
+}

@@ -12,7 +12,7 @@ export interface BuildRequest {
   entries: [string, string][]; // Use an array instead of a map to preserve order
   flags: string[];
   write: boolean;
-  stdinContents: string | null;
+  stdinContents: Uint8Array | null;
   stdinResolveDir: string | null;
   absWorkingDir: string;
   incremental: boolean;
@@ -94,13 +94,13 @@ export interface OnWaitRequest {
 export interface OnWatchRebuildRequest {
   command: 'watch-rebuild';
   key: number;
-  args: types.BuildResult;
+  args: BuildResponse;
 }
 
 export interface TransformRequest {
   command: 'transform';
   flags: string[];
-  input: string;
+  input: Uint8Array;
   inputFS: boolean;
   mangleCache?: Record<string, string | false>;
 }
@@ -115,6 +115,7 @@ export interface TransformResponse {
   map: string;
   mapFS: boolean;
 
+  legalComments?: string;
   mangleCache?: Record<string, string | false>;
 }
 
@@ -394,6 +395,7 @@ class ByteBuffer {
 
 export let encodeUTF8: (text: string) => Uint8Array
 export let decodeUTF8: (bytes: Uint8Array) => string
+let encodeInvariant: string
 
 // For the browser and node 12.x
 if (typeof TextEncoder !== 'undefined' && typeof TextDecoder !== 'undefined') {
@@ -401,36 +403,33 @@ if (typeof TextEncoder !== 'undefined' && typeof TextDecoder !== 'undefined') {
   let decoder = new TextDecoder();
   encodeUTF8 = text => encoder.encode(text);
   decodeUTF8 = bytes => decoder.decode(bytes);
+  encodeInvariant = 'new TextEncoder().encode("")'
 }
 
 // For node 10.x
 else if (typeof Buffer !== 'undefined') {
-  encodeUTF8 = text => {
-    let buffer: Uint8Array = Buffer.from(text);
-
-    // The test framework called "Jest" breaks node's Buffer API. Normally
-    // instances of Buffer are also instances of Uint8Array, but not when
-    // esbuild is run inside of whatever weird environment Jest uses. More
-    // info: https://github.com/facebook/jest/issues/4422.
-    if (!(buffer instanceof Uint8Array)) {
-      // Construct a new Uint8Array with the contents of the buffer to force
-      // it to be a Uint8Array instance. This is wasteful since it's slower
-      // than just using the Buffer, but this should only happen when esbuild
-      // is run inside of Jest.
-      buffer = new Uint8Array(buffer);
-    }
-
-    return buffer;
-  };
+  encodeUTF8 = text => Buffer.from(text);
   decodeUTF8 = bytes => {
     let { buffer, byteOffset, byteLength } = bytes;
     return Buffer.from(buffer, byteOffset, byteLength).toString();
   }
+  encodeInvariant = 'Buffer.from("")'
 }
 
 else {
   throw new Error('No UTF-8 codec found');
 }
+
+// Throw an error early if this isn't true. The test framework called "Jest"
+// has some bugs regarding this edge case, and letting esbuild proceed further
+// leads to confusing errors that make it seem like esbuild itself has a bug.
+if (!(encodeUTF8('') instanceof Uint8Array))
+  throw new Error(`Invariant violation: "${encodeInvariant} instanceof Uint8Array" is incorrectly false
+
+This indicates that your JavaScript environment is broken. You cannot use
+esbuild in this environment because esbuild relies on this invariant. This
+is not a problem with esbuild. You need to fix your environment instead.
+`)
 
 export function readUInt32LE(buffer: Uint8Array, offset: number): number {
   return buffer[offset++] |
