@@ -415,70 +415,70 @@ publish-all: check-go-version
 	git push origin main "v$(ESBUILD_VERSION)"
 
 publish-win32-x64: platform-win32-x64
-	test -n "$(OTP)" && cd npm/@esbuild/win32-x64 && npm publish --otp="$(OTP)" --registry=https://npm.pkg.github.com/
+	cd npm/@esbuild/win32-x64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-win32-ia32: platform-win32-ia32
-	test -n "$(OTP)" && cd npm/@esbuild/win32-ia32 && npm publish --otp="$(OTP)" --registry=https://npm.pkg.github.com/
+	cd npm/@esbuild/win32-ia32 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-win32-arm64: platform-win32-arm64
-	test -n "$(OTP)" && cd npm/@esbuild/win32-arm64 && npm publish --otp="$(OTP)" --registry=https://npm.pkg.github.com/
+	cd npm/@esbuild/win32-arm64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-android-x64: platform-android-x64
-	test -n "$(OTP)" && cd npm/@esbuild/android-x64 && npm publish --otp="$(OTP)" --registry=https://npm.pkg.github.com/
+	cd npm/@esbuild/android-x64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-android-arm: platform-android-arm
-	test -n "$(OTP)" && cd npm/@esbuild/android-arm && npm publish --otp="$(OTP)" --registry=https://npm.pkg.github.com/
+	cd npm/@esbuild/android-arm && npm publish --registry=https://npm.pkg.github.com/
 
 publish-android-arm64: platform-android-arm64
-	test -n "$(OTP)" && cd npm/@esbuild/android-arm64 && npm publish --otp="$(OTP)" --registry=https://npm.pkg.github.com/
+	cd npm/@esbuild/android-arm64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-darwin-x64: platform-darwin-x64
-	test -n "$(OTP)" && cd npm/@esbuild/darwin-x64 && npm publish --otp="$(OTP)" --registry=https://npm.pkg.github.com/
+	cd npm/@esbuild/darwin-x64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-darwin-arm64: platform-darwin-arm64
-	test -n "$(OTP)" && cd npm/@esbuild/darwin-arm64 && npm publish --otp="$(OTP)" --registry=https://npm.pkg.github.com/
+	cd npm/@esbuild/darwin-arm64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-freebsd-x64: platform-freebsd-x64
-	test -n "$(OTP)" && cd npm/@esbuild/freebsd-x64 && npm publish --otp="$(OTP)" --registry=https://npm.pkg.github.com/
+	cd npm/@esbuild/freebsd-x64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-freebsd-arm64: platform-freebsd-arm64
-	test -n "$(OTP)" && cd npm/@esbuild/freebsd-arm64 && npm publish --otp="$(OTP)" --registry=https://npm.pkg.github.com/
+	cd npm/@esbuild/freebsd-arm64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-netbsd-x64: platform-netbsd-x64
-	test -n "$(OTP)" && cd npm/@esbuild/netbsd-x64 && npm publish --otp="$(OTP)" --registry=https://npm.pkg.github.com/
+	cd npm/@esbuild/netbsd-x64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-openbsd-x64: platform-openbsd-x64
-	test -n "$(OTP)" && cd npm/@esbuild/openbsd-x64 && npm publish --otp="$(OTP)" --registry=https://npm.pkg.github.com/
+	cd npm/@esbuild/openbsd-x64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-linux-x64: platform-linux-x64
-	test -n "$(OTP)" && cd npm/@esbuild/linux-x64 && npm publish --otp="$(OTP)" --registry=https://npm.pkg.github.com/
+	cd npm/@esbuild/linux-x64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-linux-ia32: platform-linux-ia32
-	test -n "$(OTP)" && cd npm/@esbuild/linux-ia32 && npm publish --otp="$(OTP)" --registry=https://npm.pkg.github.com/
+	cd npm/@esbuild/linux-ia32 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-linux-arm: platform-linux-arm
-	test -n "$(OTP)" && cd npm/@esbuild/linux-arm && npm publish --otp="$(OTP)" --registry=https://npm.pkg.github.com/
+	cd npm/@esbuild/linux-arm && npm publish --registry=https://npm.pkg.github.com/
 
 publish-linux-arm64: platform-linux-arm64
-	test -n "$(OTP)" && cd npm/@esbuild/linux-arm64 && npm publish --otp="$(OTP)" --registry=https://npm.pkg.github.com/
+	cd npm/@esbuild/linux-arm64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-linux-loong64: platform-linux-loong64
-	test -n "$(OTP)" && cd npm/@esbuild/linux-loong64 && npm publish --otp="$(OTP)" --registry=https://npm.pkg.github.com/
+	cd npm/@esbuild/linux-loong64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-linux-mips64el: platform-linux-mips64el
-	test -n "$(OTP)" && cd npm/@esbuild/linux-mips64el && npm publish --otp="$(OTP)" --registry=https://npm.pkg.github.com/
+	cd npm/@esbuild/linux-mips64el && npm publish --registry=https://npm.pkg.github.com/
 
 publish-linux-ppc64: platform-linux-ppc64
-	test -n "$(OTP)" && cd npm/@esbuild/linux-ppc64 && npm publish --otp="$(OTP)" --registry=https://npm.pkg.github.com/
+	cd npm/@esbuild/linux-ppc64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-linux-riscv64: platform-linux-riscv64
-	test -n "$(OTP)" && cd npm/@esbuild/linux-riscv64 && npm publish --otp="$(OTP)" --registry=https://npm.pkg.github.com/
+	cd npm/@esbuild/linux-riscv64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-linux-s390x: platform-linux-s390x
-	test -n "$(OTP)" && cd npm/@esbuild/linux-s390x && npm publish --otp="$(OTP)" --registry=https://npm.pkg.github.com/
+	cd npm/@esbuild/linux-s390x && npm publish --registry=https://npm.pkg.github.com/
 
 publish-sunos-x64: platform-sunos-x64
-	test -n "$(OTP)" && cd npm/@esbuild/sunos-x64 && npm publish --otp="$(OTP)" --registry=https://npm.pkg.github.com/
+	cd npm/@esbuild/sunos-x64 && npm publish --registry=https://npm.pkg.github.com/
 
 publish-wasm: platform-wasm
 	cd npm/esbuild-wasm && npm publish --registry=https://npm.pkg.github.com/
